@@ -6,6 +6,7 @@ import (
 
 	"github.com/gordonklaus/portaudio"
 
+	"github.com/kwoodhouse93/audio-playground/filter"
 	"github.com/kwoodhouse93/audio-playground/generator"
 	"github.com/kwoodhouse93/audio-playground/router"
 	"github.com/kwoodhouse93/audio-playground/sink"
@@ -39,7 +40,7 @@ func main() {
 	sqrS := generator.SquareS(s, 261.63, 440.0, 0, 0, 0.5, sampleRate)
 
 	mix := router.Mixer([]router.SourceGain{
-		{Source: noise, Gain: 0.0},
+		{Source: noise, Gain: 0.1},
 		{Source: sine, Gain: 0.0},
 		{Source: sineS, Gain: 0.0},
 		{Source: tri, Gain: 0.0},
@@ -49,7 +50,13 @@ func main() {
 		{Source: sqr, Gain: 0.0},
 		{Source: sqrS, Gain: 0.0},
 	})
-	sink := sink.New(mix)
+
+	lfSqr := generator.SquareM(s, 2, 0, 0.1, sampleRate)
+	pulse := filter.Pulse(lfSqr, 50*time.Millisecond, 0.5, sampleRate)
+
+	gate := filter.Gate(mix, pulse, 0.5)
+
+	sink := sink.New(gate)
 
 	st, err := portaudio.OpenStream(p, sink)
 	panicOnErr(err)
@@ -59,7 +66,7 @@ func main() {
 	err = st.Start()
 	panicOnErr(err)
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(4 * time.Second)
 
 	err = st.Stop()
 	panicOnErr(err)
