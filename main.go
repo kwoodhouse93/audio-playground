@@ -78,9 +78,14 @@ func main() {
 
 	sum := router.SumComp(nGate, mSeq)
 
-	lpf := filter.LowPass(sum)
+	// lpf := filter.LowPass(sum)
+	dly := filter.Delay(sum, 1000*time.Millisecond, sampleRate)
+	sumDly := router.Mixer2(dly, sum, 0.2, 0.6)
+	// The delay seems to work, but the particular arrangement above seems to
+	// stream poorly. Possibly accessing certain sources twice in the same chain
+	// causes problems?
 
-	sink := sink.New(lpf)
+	sink := sink.New(sumDly)
 
 	st, err := portaudio.OpenStream(p, sink)
 	panicOnErr(err)

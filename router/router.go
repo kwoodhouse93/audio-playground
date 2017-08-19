@@ -95,3 +95,7 @@ func Mixer(inputs []SourceGain) source.Source {
 		return Sum(sources...)(bufferSize)
 	}
 }
+
+// func Dup(source source.Source, count int) (outputs []source.Source) {
+// 	// Load values in source and copy into multiple buffers
+// }
