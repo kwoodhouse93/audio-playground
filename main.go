@@ -1,81 +1,54 @@
 package main
 
 import (
-	"log"
-	"math"
-	"runtime"
+	"fmt"
 	"time"
 
-	"github.com/go-gl/gl/v4.5-core/gl"
-	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/gordonklaus/portaudio"
+
+	"github.com/kwoodhouse93/audio-playground/filter"
+	"github.com/kwoodhouse93/audio-playground/generator"
+	"github.com/kwoodhouse93/audio-playground/sink"
+	"github.com/kwoodhouse93/audio-playground/source"
 )
 
-func init() {
-	// This is needed to arrange that main() runs on main thread.
-	// See documentation for functions that are only allowed to be called from the main thread.
-	runtime.LockOSThread()
-}
+var sampleRate float64
 
 func main() {
-	err := glfw.Init()
-	if err != nil {
-		panic(err)
-	}
-	defer glfw.Terminate()
-
-	window, err := glfw.CreateWindow(640, 480, "Testing", nil, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	window.MakeContextCurrent()
-
-	// Important! Call gl.Init only under the presence of an active OpenGL context,
-	// i.e., after MakeContextCurrent.
-	if err := gl.Init(); err != nil {
-		log.Fatalln(err)
-	}
-
 	portaudio.Initialize()
 	defer portaudio.Terminate()
 
-	s, err := NewSine(30, sampleRate)
-	if err != nil {
-		panic(err)
-	}
+	h, err := portaudio.DefaultHostApi()
+	panicOnErr(err)
+	p := portaudio.LowLatencyParameters(nil, h.DefaultOutputDevice)
+	p.Input.Channels = 0
+	p.Output.Channels = 2
+	sampleRate = p.SampleRate
+	fmt.Printf("Sample rate: %f\n", sampleRate)
+
+	source := source.NewSource(p.Output.Channels)
+	// sine := generator.NewSineM(source, 440, 0, sampleRate)
+	// gain := filter.NewGain(sine, 0.4)
+	sineS := generator.NewSineS(source, 300, 440, 0, 0, sampleRate)
+	gain := filter.NewGain(sineS, 0.2)
+	sink := sink.NewSink(gain)
+
+	s, err := portaudio.OpenStream(p, sink)
+	panicOnErr(err)
+
 	defer s.Close()
+
 	err = s.Start()
-	if err != nil {
-		panic(err)
-	}
-	time.Sleep(1 * time.Second)
+	panicOnErr(err)
+
+	time.Sleep(2 * time.Second)
+
 	err = s.Stop()
+	panicOnErr(err)
+}
+
+func panicOnErr(err error) {
 	if err != nil {
 		panic(err)
-	}
-}
-
-const sampleRate = 44100
-
-type Sine struct {
-	*portaudio.Stream
-	step, phase float64
-}
-
-func NewSine(f, sampleRate float64) (*Sine, error) {
-	s := &Sine{nil, f / sampleRate, 0}
-	var err error
-	s.Stream, err = portaudio.OpenDefaultStream(0, 1, sampleRate, 0, s.genSine)
-	if err != nil {
-		return nil, err
-	}
-	return s, nil
-}
-
-func (s *Sine) genSine(out [][]float32) {
-	for i := range out[0] {
-		out[0][i] = float32(math.Sin(2 * math.Pi * s.phase))
-		_, s.phase = math.Modf(s.phase + s.step)
 	}
 }
