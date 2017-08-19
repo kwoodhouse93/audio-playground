@@ -30,6 +30,18 @@ func Sum2(source1, source2 source.Source) source.Source {
 	}
 }
 
+func Sum2Comp(source1, source2 source.Source) source.Source {
+	return func(bufferSize int) (out [][]float32) {
+		out = source1(bufferSize)
+		mix := source2(bufferSize)
+		for i := range out[0] {
+			out[0][i] = (out[0][i] + mix[0][i]) / 2
+			out[1][i] = (out[1][i] + mix[1][i]) / 2
+		}
+		return out
+	}
+}
+
 // Sum returns a filter that adds multiple signals together
 // Failing to reduce the gain of these signals will likely cause severe clipping
 func Sum(sources ...source.Source) source.Source {
@@ -39,6 +51,25 @@ func Sum(sources ...source.Source) source.Source {
 			curSource = Sum2(curSource, source)
 		}
 		return curSource(bufferSize)
+	}
+}
+
+// SumComp returns a filter that adds multiple signals but compensates for
+// the increase in volume that this would result in
+func SumComp(sources ...source.Source) source.Source {
+	return func(bufferSize int) (out [][]float32) {
+		compGain := 1 / (float32(len(sources)))
+		// fmt.Println("comp gain:", compGain)
+		curSource := sources[0]
+		for _, source := range sources[1:] {
+			curSource = Sum2(Gain(curSource, compGain), Gain(source, compGain))
+		}
+		return curSource(bufferSize)
+		// curSource := sources[0]
+		// for _, source := range sources[1:] {
+		// 	curSource = Sum2Comp(curSource, source)
+		// }
+		// return curSource(bufferSize)
 	}
 }
 

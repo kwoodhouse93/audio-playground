@@ -6,7 +6,6 @@ import (
 
 	"github.com/gordonklaus/portaudio"
 
-	"github.com/kwoodhouse93/audio-playground/filter"
 	"github.com/kwoodhouse93/audio-playground/generator"
 	"github.com/kwoodhouse93/audio-playground/router"
 	"github.com/kwoodhouse93/audio-playground/sink"
@@ -29,34 +28,55 @@ func main() {
 
 	s := source.New(p.Output.Channels)
 
-	noise := generator.UniformNoiseS(s)
-	sine := generator.SineM(s, 445, 0, sampleRate)
-	sineS := generator.SineS(s, 261.63, 440, 0, 0, sampleRate)
-	tri := generator.TriangleM(s, 440, 0, sampleRate)
-	triS := generator.TriangleS(s, 261.63, 440, 0, 0, sampleRate)
-	saw := generator.SawtoothM(s, 440, 0, sampleRate)
-	sawS := generator.SawtoothS(s, 261.63, 440, 0, 0, sampleRate)
-	sqr := generator.SquareM(s, 440.0, 0, 0.5, sampleRate)
-	sqrS := generator.SquareS(s, 261.63, 440.0, 0, 0, 0.5, sampleRate)
+	// noise := generator.UniformNoiseS(s)
+	// sine := generator.SineM(s, 440, 0, sampleRate)
+	// sineS := generator.SineS(s, 261.63, 440, 0, 0, sampleRate)
+	// tri := generator.TriangleM(s, 440, 0, sampleRate)
+	// triS := generator.TriangleS(s, 523.25, 659.25, 0, 0, sampleRate)
+	// saw := generator.SawtoothM(s, 440, 0, sampleRate)
+	// sawS := generator.SawtoothS(s, 261.63, 440, 0, 0, sampleRate)
+	// sqr := generator.SquareM(s, 440.0, 0, 0.5, sampleRate)
+	// sqrS := generator.SquareS(s, 261.63, 440.0, 0, 0, 0.5, sampleRate)
+	//
+	// mix := router.Mixer([]router.SourceGain{
+	// 	{Source: noise, Gain: 0.0},
+	// 	{Source: sine, Gain: 0.0},
+	// 	{Source: sineS, Gain: 0.6},
+	// 	{Source: tri, Gain: 0.0},
+	// 	{Source: triS, Gain: 0.4},
+	// 	{Source: saw, Gain: 0.0},
+	// 	{Source: sawS, Gain: 0.0},
+	// 	{Source: sqr, Gain: 0.0},
+	// 	{Source: sqrS, Gain: 0.0},
+	// })
 
-	mix := router.Mixer([]router.SourceGain{
-		{Source: noise, Gain: 0.1},
-		{Source: sine, Gain: 0.0},
-		{Source: sineS, Gain: 0.0},
-		{Source: tri, Gain: 0.0},
-		{Source: triS, Gain: 0.0},
-		{Source: saw, Gain: 0.0},
-		{Source: sawS, Gain: 0.0},
-		{Source: sqr, Gain: 0.0},
-		{Source: sqrS, Gain: 0.0},
-	})
+	// // Noise 4/4
+	// nLfSqr := generator.SquareM(s, 2, 0, 0.1, sampleRate)
+	// nPulse := filter.Pulse(nLfSqr, 50*time.Millisecond, 0.5, sampleRate)
+	// nGate := filter.Gate(noise, nPulse, 0.5)
 
-	lfSqr := generator.SquareM(s, 2, 0, 0.1, sampleRate)
-	pulse := filter.Pulse(lfSqr, 50*time.Millisecond, 0.5, sampleRate)
+	// Am chord
+	sineSAm := generator.SineS(s, 261.63, 440, 0, 0, sampleRate)
+	triSAm := generator.TriangleS(s, 523.25, 659.25, 0, 0, sampleRate)
+	mixAm := router.Mixer2(sineSAm, triSAm, 0.6, 0.4)
 
-	gate := filter.Gate(mix, pulse, 0.5)
+	// E chord
+	// sineSE := generator.SineS(s, 493.88, 329.63, 0, 0, sampleRate)
+	// triSE := generator.TriangleS(s, 415.30, 164.81, 0, 0, sampleRate)
+	// mixE := router.Mixer2(sineSE, triSE, 0.6, 0.4)
 
-	sink := sink.New(gate)
+	// mLfSqr := generator.SquareM(s, 0.5, 0, 0.1, sampleRate)
+	// mPulse := filter.Pulse(mLfSqr, 1990*time.Millisecond, 0.5, sampleRate)
+	// mGate := filter.Gate(mix, mPulse, 0.5)
+
+	// mSeq := filter.Sequencer([]source.Source{
+	// 	mixAm,
+	// 	mixE,
+	// }, 2*time.Second, sampleRate)
+
+	// sum := router.SumComp(nGate, mSeq)
+
+	sink := sink.New(mixAm)
 
 	st, err := portaudio.OpenStream(p, sink)
 	panicOnErr(err)
