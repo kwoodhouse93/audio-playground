@@ -1,6 +1,8 @@
 # audio-playground
 
-From https://github.com/avelino/awesome-go:
+WIP library of composable audio synthesis components based on PortAudio.
+
+For reference, copied from https://github.com/avelino/awesome-go:
 
 *Libraries for manipulating audio.*
 
