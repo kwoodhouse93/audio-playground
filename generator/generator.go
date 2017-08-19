@@ -2,12 +2,40 @@ package generator
 
 import (
 	"math"
+	"math/rand"
+	"time"
 
 	"github.com/kwoodhouse93/audio-playground/source"
 )
 
-// NewSineM returns a mono sine wave generator
-func NewSineM(source source.Source, frequency, phase, sampleRate float64) source.Source {
+// UniformNoiseM returns a mono uniform noise generator
+func UniformNoiseM(source source.Source) source.Source {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return func(bufferSize int) (out [][]float32) {
+		out = source(bufferSize)
+		for i := range out[0] {
+			out[0][i] = (r.Float32() * 2) - 1
+			out[1][i] = out[0][i]
+		}
+		return out
+	}
+}
+
+// UniformNoiseS returns a stereo uniform noise generator
+func UniformNoiseS(source source.Source) source.Source {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return func(bufferSize int) (out [][]float32) {
+		out = source(bufferSize)
+		for i := range out[0] {
+			out[0][i] = (r.Float32() * 2) - 1
+			out[1][i] = (r.Float32() * 2) - 1
+		}
+		return out
+	}
+}
+
+// SineM returns a mono sine wave generator
+func SineM(source source.Source, frequency, phase, sampleRate float64) source.Source {
 	step := frequency / sampleRate
 	return func(bufferSize int) (out [][]float32) {
 		out = source(bufferSize)
@@ -21,8 +49,8 @@ func NewSineM(source source.Source, frequency, phase, sampleRate float64) source
 	}
 }
 
-// NewSineS returns a stereo sine wave generator
-func NewSineS(source source.Source, frequencyL, frequencyR, phaseL, phaseR, sampleRate float64) source.Source {
+// SineS returns a stereo sine wave generator
+func SineS(source source.Source, frequencyL, frequencyR, phaseL, phaseR, sampleRate float64) source.Source {
 	stepL := frequencyL / sampleRate
 	stepR := frequencyR / sampleRate
 	return func(bufferSize int) (out [][]float32) {

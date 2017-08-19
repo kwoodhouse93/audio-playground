@@ -6,8 +6,8 @@ import (
 
 	"github.com/gordonklaus/portaudio"
 
-	"github.com/kwoodhouse93/audio-playground/filter"
 	"github.com/kwoodhouse93/audio-playground/generator"
+	"github.com/kwoodhouse93/audio-playground/router"
 	"github.com/kwoodhouse93/audio-playground/sink"
 	"github.com/kwoodhouse93/audio-playground/source"
 )
@@ -26,24 +26,30 @@ func main() {
 	sampleRate = p.SampleRate
 	fmt.Printf("Sample rate: %f\n", sampleRate)
 
-	source := source.NewSource(p.Output.Channels)
-	// sine := generator.NewSineM(source, 440, 0, sampleRate)
-	// gain := filter.NewGain(sine, 0.4)
-	sineS := generator.NewSineS(source, 300, 440, 0, 0, sampleRate)
-	gain := filter.NewGain(sineS, 0.2)
-	sink := sink.NewSink(gain)
+	s := source.New(p.Output.Channels)
 
-	s, err := portaudio.OpenStream(p, sink)
+	sine := generator.SineM(s, 82.41, 0, sampleRate)
+	sineS := generator.SineS(s, 261.63, 440, 0, 0, sampleRate)
+	noise := generator.UniformNoiseS(s)
+
+	mix := router.Mixer([]router.SourceGain{
+		{Source: sine, Gain: 0.1},
+		{Source: sineS, Gain: 0.3},
+		{Source: noise, Gain: 0.02},
+	})
+	sink := sink.New(mix)
+
+	st, err := portaudio.OpenStream(p, sink)
 	panicOnErr(err)
 
-	defer s.Close()
+	defer st.Close()
 
-	err = s.Start()
+	err = st.Start()
 	panicOnErr(err)
 
 	time.Sleep(2 * time.Second)
 
-	err = s.Stop()
+	err = st.Stop()
 	panicOnErr(err)
 }
 
