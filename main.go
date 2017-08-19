@@ -6,6 +6,7 @@ import (
 
 	"github.com/gordonklaus/portaudio"
 
+	"github.com/kwoodhouse93/audio-playground/filter"
 	"github.com/kwoodhouse93/audio-playground/generator"
 	"github.com/kwoodhouse93/audio-playground/router"
 	"github.com/kwoodhouse93/audio-playground/sink"
@@ -28,7 +29,7 @@ func main() {
 
 	s := source.New(p.Output.Channels)
 
-	// noise := generator.UniformNoiseS(s)
+	noise := generator.UniformNoiseS(s)
 	// sine := generator.SineM(s, 440, 0, sampleRate)
 	// sineS := generator.SineS(s, 261.63, 440, 0, 0, sampleRate)
 	// tri := generator.TriangleM(s, 440, 0, sampleRate)
@@ -51,9 +52,9 @@ func main() {
 	// })
 
 	// // Noise 4/4
-	// nLfSqr := generator.SquareM(s, 2, 0, 0.1, sampleRate)
-	// nPulse := filter.Pulse(nLfSqr, 50*time.Millisecond, 0.5, sampleRate)
-	// nGate := filter.Gate(noise, nPulse, 0.5)
+	nLfSqr := generator.SquareM(s, 2, 0, 0.1, sampleRate)
+	nPulse := filter.Pulse(nLfSqr, 50*time.Millisecond, 0.5, sampleRate)
+	nGate := filter.Gate(noise, nPulse, 0.5)
 
 	// Am chord
 	sineSAm := generator.SineS(s, 261.63, 440, 0, 0, sampleRate)
@@ -61,22 +62,22 @@ func main() {
 	mixAm := router.Mixer2(sineSAm, triSAm, 0.6, 0.4)
 
 	// E chord
-	// sineSE := generator.SineS(s, 493.88, 329.63, 0, 0, sampleRate)
-	// triSE := generator.TriangleS(s, 415.30, 164.81, 0, 0, sampleRate)
-	// mixE := router.Mixer2(sineSE, triSE, 0.6, 0.4)
+	sineSE := generator.SineS(s, 493.88, 329.63, 0, 0, sampleRate)
+	triSE := generator.TriangleS(s, 415.30, 164.81, 0, 0, sampleRate)
+	mixE := router.Mixer2(sineSE, triSE, 0.6, 0.4)
 
 	// mLfSqr := generator.SquareM(s, 0.5, 0, 0.1, sampleRate)
 	// mPulse := filter.Pulse(mLfSqr, 1990*time.Millisecond, 0.5, sampleRate)
 	// mGate := filter.Gate(mix, mPulse, 0.5)
 
-	// mSeq := filter.Sequencer([]source.Source{
-	// 	mixAm,
-	// 	mixE,
-	// }, 2*time.Second, sampleRate)
+	mSeq := filter.Sequencer([]source.Source{
+		mixAm,
+		mixE,
+	}, 2*time.Second, sampleRate)
 
-	// sum := router.SumComp(nGate, mSeq)
+	sum := router.SumComp(nGate, mSeq)
 
-	sink := sink.New(mixAm)
+	sink := sink.New(sum)
 
 	st, err := portaudio.OpenStream(p, sink)
 	panicOnErr(err)
@@ -86,7 +87,7 @@ func main() {
 	err = st.Start()
 	panicOnErr(err)
 
-	time.Sleep(4 * time.Second)
+	time.Sleep(8 * time.Second)
 
 	err = st.Stop()
 	panicOnErr(err)

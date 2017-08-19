@@ -90,10 +90,8 @@ func Sequencer(sources []source.Source, period time.Duration, sampleRate float64
 		}
 		for i := range inputs[0][0] {
 			curStep--
-			// fmt.Println(curStep)
 			if curStep <= 0 {
-				channel++
-				// fmt.Println("channel", channel)
+				channel = (channel + 1) % len(sources)
 				curStep = seqSteps
 			}
 			out[0][i] = inputs[channel][0][i]
