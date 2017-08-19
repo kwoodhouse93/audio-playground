@@ -37,72 +37,40 @@ func UniformNoiseS(source source.Source) source.Source {
 
 // SineM returns a mono sine wave generator
 func SineM(source source.Source, frequency, phase, sampleRate float64) source.Source {
-	step := frequency / sampleRate
-	return func(bufferSize int) (out [][]float32) {
-		out = source(bufferSize)
-		for i := range out[0] {
-			sample := float32(math.Sin(2 * math.Pi * phase))
-			_, phase = math.Modf(phase + step)
-			out[0][i] = sample
-			out[1][i] = sample
-		}
-		return out
-	}
+	return applyWaveM(math.Sin, source, frequency, phase, sampleRate)
 }
 
 // SineS returns a stereo sine wave generator
 func SineS(source source.Source, frequencyL, frequencyR, phaseL, phaseR, sampleRate float64) source.Source {
-	stepL := frequencyL / sampleRate
-	stepR := frequencyR / sampleRate
-	return func(bufferSize int) (out [][]float32) {
-		out = source(bufferSize)
-		for i := range out[0] {
-			out[0][i] = float32(math.Sin(2 * math.Pi * phaseL))
-			_, phaseL = math.Modf(phaseL + stepL)
-			out[1][i] = float32(math.Sin(2 * math.Pi * phaseR))
-			_, phaseR = math.Modf(phaseR + stepR)
-		}
-		return out
-	}
+	return applyWaveS(math.Sin, source, frequencyL, frequencyR, phaseL, phaseR, sampleRate)
 }
 
 // TriangleM returns a mono triangle wave generator
 func TriangleM(source source.Source, frequency, phase, sampleRate float64) source.Source {
-	step := frequency / sampleRate
-	return func(bufferSize int) (out [][]float32) {
-		out = source(bufferSize)
-		for i := range out[0] {
-			out[0][i] = float32(utils.Triangle(2 * math.Pi * phase))
-			_, phase = math.Modf(phase + step)
-			out[1][i] = out[0][i]
-		}
-		return out
-	}
+	return applyWaveM(utils.Triangle, source, frequency, phase, sampleRate)
 }
 
 // TriangleS returns a stereo triangle wave generator
 func TriangleS(source source.Source, frequencyL, frequencyR, phaseL, phaseR, sampleRate float64) source.Source {
-	stepL := frequencyL / sampleRate
-	stepR := frequencyR / sampleRate
-	return func(bufferSize int) (out [][]float32) {
-		out = source(bufferSize)
-		for i := range out[0] {
-			out[0][i] = float32(utils.Triangle(2 * math.Pi * phaseL))
-			_, phaseL = math.Modf(phaseL + stepL)
-			out[1][i] = float32(utils.Triangle(2 * math.Pi * phaseR))
-			_, phaseR = math.Modf(phaseR + stepR)
-		}
-		return out
-	}
+	return applyWaveS(utils.Triangle, source, frequencyL, frequencyR, phaseL, phaseR, sampleRate)
 }
 
 // SawtoothM returns a mono sawtooth wave generator
 func SawtoothM(source source.Source, frequency, phase, sampleRate float64) source.Source {
+	return applyWaveM(utils.Sawtooth, source, frequency, phase, sampleRate)
+}
+
+// SawtoothS returns a stereo sawtooth wave generator
+func SawtoothS(source source.Source, frequencyL, frequencyR, phaseL, phaseR, sampleRate float64) source.Source {
+	return applyWaveS(utils.Sawtooth, source, frequencyL, frequencyR, phaseL, phaseR, sampleRate)
+}
+
+func applyWaveM(waveFunc func(float64) float64, source source.Source, frequency, phase, sampleRate float64) source.Source {
 	step := frequency / sampleRate
 	return func(bufferSize int) (out [][]float32) {
 		out = source(bufferSize)
 		for i := range out[0] {
-			out[0][i] = float32(utils.Sawtooth(2 * math.Pi * phase))
+			out[0][i] = float32(waveFunc(2 * math.Pi * phase))
 			_, phase = math.Modf(phase + step)
 			out[1][i] = out[0][i]
 		}
@@ -110,16 +78,15 @@ func SawtoothM(source source.Source, frequency, phase, sampleRate float64) sourc
 	}
 }
 
-// SawtoothS returns a stereo sawtooth wave generator
-func SawtoothS(source source.Source, frequencyL, frequencyR, phaseL, phaseR, sampleRate float64) source.Source {
+func applyWaveS(waveFunc func(float64) float64, source source.Source, frequencyL, frequencyR, phaseL, phaseR, sampleRate float64) source.Source {
 	stepL := frequencyL / sampleRate
 	stepR := frequencyR / sampleRate
 	return func(bufferSize int) (out [][]float32) {
 		out = source(bufferSize)
 		for i := range out[0] {
-			out[0][i] = float32(utils.Sawtooth(2 * math.Pi * phaseL))
+			out[0][i] = float32(waveFunc(2 * math.Pi * phaseL))
 			_, phaseL = math.Modf(phaseL + stepL)
-			out[1][i] = float32(utils.Sawtooth(2 * math.Pi * phaseR))
+			out[1][i] = float32(waveFunc(2 * math.Pi * phaseR))
 			_, phaseR = math.Modf(phaseR + stepR)
 		}
 		return out
