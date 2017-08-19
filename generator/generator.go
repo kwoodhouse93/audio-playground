@@ -65,6 +65,16 @@ func SawtoothS(source source.Source, frequencyL, frequencyR, phaseL, phaseR, sam
 	return applyWaveS(utils.Sawtooth, source, frequencyL, frequencyR, phaseL, phaseR, sampleRate)
 }
 
+// SquareM returns a mono square wave generator
+func SquareM(source source.Source, frequency, phase, dutyCycle, sampleRate float64) source.Source {
+	return applyWaveM(utils.SquareFunc(dutyCycle), source, frequency, phase, sampleRate)
+}
+
+// SquareS returns a stereo square wave generator
+func SquareS(source source.Source, frequencyL, frequencyR, phaseL, phaseR, dutyCycle, sampleRate float64) source.Source {
+	return applyWaveS(utils.SquareFunc(dutyCycle), source, frequencyL, frequencyR, phaseL, phaseR, sampleRate)
+}
+
 func applyWaveM(waveFunc func(float64) float64, source source.Source, frequency, phase, sampleRate float64) source.Source {
 	step := frequency / sampleRate
 	return func(bufferSize int) (out [][]float32) {

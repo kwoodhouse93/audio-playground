@@ -18,3 +18,15 @@ func Triangle(x float64) float64 {
 func Sawtooth(x float64) float64 {
 	return ((1 / math.Pi) * math.Mod(x, 2*math.Pi)) - 1
 }
+
+// SquareFunc returns a function which returns the value of a square
+// wave at x radians, with the given duty cycle.
+// Output is in the range [-1.0, 1.0], and a cycle is 2*pi radians
+func SquareFunc(dutyCycle float64) func(float64) float64 {
+	return func(x float64) float64 {
+		if math.Mod(x, 2*math.Pi) < (2 * math.Pi * dutyCycle) {
+			return 1
+		}
+		return -1
+	}
+}

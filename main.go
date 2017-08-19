@@ -35,6 +35,8 @@ func main() {
 	triS := generator.TriangleS(s, 261.63, 440, 0, 0, sampleRate)
 	saw := generator.SawtoothM(s, 440, 0, sampleRate)
 	sawS := generator.SawtoothS(s, 261.63, 440, 0, 0, sampleRate)
+	sqr := generator.SquareM(s, 440.0, 0, 0.5, sampleRate)
+	sqrS := generator.SquareS(s, 261.63, 440.0, 0, 0, 0.5, sampleRate)
 
 	mix := router.Mixer([]router.SourceGain{
 		{Source: noise, Gain: 0.0},
@@ -44,6 +46,8 @@ func main() {
 		{Source: triS, Gain: 0.0},
 		{Source: saw, Gain: 0.0},
 		{Source: sawS, Gain: 0.0},
+		{Source: sqr, Gain: 0.0},
+		{Source: sqrS, Gain: 0.0},
 	})
 	sink := sink.New(mix)
 
