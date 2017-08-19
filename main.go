@@ -9,6 +9,7 @@ import (
 	"github.com/kwoodhouse93/audio-playground/filter"
 	"github.com/kwoodhouse93/audio-playground/generator"
 	"github.com/kwoodhouse93/audio-playground/router"
+	"github.com/kwoodhouse93/audio-playground/sequence"
 	"github.com/kwoodhouse93/audio-playground/sink"
 	"github.com/kwoodhouse93/audio-playground/source"
 )
@@ -53,8 +54,8 @@ func main() {
 
 	// // Noise 4/4
 	nLfSqr := generator.SquareM(s, 2, 0, 0.1, sampleRate)
-	nPulse := filter.Pulse(nLfSqr, 50*time.Millisecond, 0.5, sampleRate)
-	nGate := filter.Gate(noise, nPulse, 0.5)
+	nPulse := sequence.Pulse(nLfSqr, 50*time.Millisecond, 0.5, sampleRate)
+	nGate := sequence.Gate(noise, nPulse, 0.5)
 
 	// Am chord
 	sineSAm := generator.SineS(s, 261.63, 440, 0, 0, sampleRate)
@@ -67,17 +68,19 @@ func main() {
 	mixE := router.Mixer2(sineSE, triSE, 0.6, 0.4)
 
 	// mLfSqr := generator.SquareM(s, 0.5, 0, 0.1, sampleRate)
-	// mPulse := filter.Pulse(mLfSqr, 1990*time.Millisecond, 0.5, sampleRate)
-	// mGate := filter.Gate(mix, mPulse, 0.5)
+	// mPulse := sequence.Pulse(mLfSqr, 1990*time.Millisecond, 0.5, sampleRate)
+	// mGate := sequence.Gate(mix, mPulse, 0.5)
 
-	mSeq := filter.Sequencer([]source.Source{
+	mSeq := sequence.Sequencer([]source.Source{
 		mixAm,
 		mixE,
 	}, 2*time.Second, sampleRate)
 
 	sum := router.SumComp(nGate, mSeq)
 
-	sink := sink.New(sum)
+	lpf := filter.LowPass(sum)
+
+	sink := sink.New(lpf)
 
 	st, err := portaudio.OpenStream(p, sink)
 	panicOnErr(err)

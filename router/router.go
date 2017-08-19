@@ -30,6 +30,8 @@ func Sum2(source1, source2 source.Source) source.Source {
 	}
 }
 
+// Sum2Comp returns a function that adds two signals together and reduces
+// their volume to compensate for the addition
 func Sum2Comp(source1, source2 source.Source) source.Source {
 	return func(bufferSize int) (out [][]float32) {
 		out = source1(bufferSize)
@@ -59,17 +61,11 @@ func Sum(sources ...source.Source) source.Source {
 func SumComp(sources ...source.Source) source.Source {
 	return func(bufferSize int) (out [][]float32) {
 		compGain := 1 / (float32(len(sources)))
-		// fmt.Println("comp gain:", compGain)
 		curSource := sources[0]
 		for _, source := range sources[1:] {
 			curSource = Sum2(Gain(curSource, compGain), Gain(source, compGain))
 		}
 		return curSource(bufferSize)
-		// curSource := sources[0]
-		// for _, source := range sources[1:] {
-		// 	curSource = Sum2Comp(curSource, source)
-		// }
-		// return curSource(bufferSize)
 	}
 }
 
