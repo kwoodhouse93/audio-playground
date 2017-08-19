@@ -28,14 +28,18 @@ func main() {
 
 	s := source.New(p.Output.Channels)
 
-	sine := generator.SineM(s, 82.41, 0, sampleRate)
+	sine := generator.SineM(s, 445, 0, sampleRate)
 	sineS := generator.SineS(s, 261.63, 440, 0, 0, sampleRate)
 	noise := generator.UniformNoiseS(s)
+	tri := generator.TriangleM(s, 440, 0, sampleRate)
+	triS := generator.TriangleS(s, 261.63, 440, 0, 0, sampleRate)
 
 	mix := router.Mixer([]router.SourceGain{
-		{Source: sine, Gain: 0.1},
-		{Source: sineS, Gain: 0.3},
+		{Source: sine, Gain: 0.2},
+		{Source: sineS, Gain: 0.1},
 		{Source: noise, Gain: 0.02},
+		{Source: tri, Gain: 0.2},
+		{Source: triS, Gain: 0.4},
 	})
 	sink := sink.New(mix)
 
