@@ -33,13 +33,17 @@ func main() {
 	noise := generator.UniformNoiseS(s)
 	tri := generator.TriangleM(s, 440, 0, sampleRate)
 	triS := generator.TriangleS(s, 261.63, 440, 0, 0, sampleRate)
+	saw := generator.SawtoothM(s, 440, 0, sampleRate)
+	sawS := generator.SawtoothS(s, 261.63, 440, 0, 0, sampleRate)
 
 	mix := router.Mixer([]router.SourceGain{
-		{Source: sine, Gain: 0.2},
-		{Source: sineS, Gain: 0.1},
-		{Source: noise, Gain: 0.02},
-		{Source: tri, Gain: 0.2},
-		{Source: triS, Gain: 0.4},
+		{Source: sine, Gain: 0.0},
+		{Source: sineS, Gain: 0.0},
+		{Source: noise, Gain: 0.0},
+		{Source: tri, Gain: 0.0},
+		{Source: triS, Gain: 0.0},
+		{Source: saw, Gain: 0.0},
+		{Source: sawS, Gain: 0.2},
 	})
 	sink := sink.New(mix)
 
