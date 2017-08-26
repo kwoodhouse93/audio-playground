@@ -10,25 +10,26 @@ import (
 )
 
 // UniformNoiseM returns a mono uniform noise generator
-func UniformNoiseM(source source.Source) source.Source {
+func UniformNoiseM(src source.Source) source.Source {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return func() []float32 {
-		out := source()
+
+	return source.Cached(func(step int) []float32 {
+		out := src(step)
 		out[0] = (r.Float32() * 2) - 1
 		out[1] = out[0]
 		return out
-	}
+	})
 }
 
 // UniformNoiseS returns a stereo uniform noise generator
-func UniformNoiseS(source source.Source) source.Source {
+func UniformNoiseS(src source.Source) source.Source {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return func() []float32 {
-		out := source()
+	return source.Cached(func(step int) []float32 {
+		out := src(step)
 		out[0] = (r.Float32() * 2) - 1
 		out[1] = (r.Float32() * 2) - 1
 		return out
-	}
+	})
 }
 
 // SineM returns a mono sine wave generator
@@ -71,26 +72,26 @@ func SquareS(source source.Source, frequencyL, frequencyR, phaseL, phaseR, dutyC
 	return applyWaveS(utils.SquareFunc(dutyCycle), source, frequencyL, frequencyR, phaseL, phaseR, sampleRate)
 }
 
-func applyWaveM(waveFunc func(float64) float64, source source.Source, frequency, phase, sampleRate float64) source.Source {
-	step := frequency / sampleRate
-	return func() []float32 {
-		out := source()
+func applyWaveM(waveFunc func(float64) float64, src source.Source, frequency, phase, sampleRate float64) source.Source {
+	stepChange := frequency / sampleRate
+	return source.Cached(func(step int) []float32 {
+		out := src(step)
 		out[0] = float32(waveFunc(2 * math.Pi * phase))
-		_, phase = math.Modf(phase + step)
+		_, phase = math.Modf(phase + stepChange)
 		out[1] = out[0]
 		return out
-	}
+	})
 }
 
-func applyWaveS(waveFunc func(float64) float64, source source.Source, frequencyL, frequencyR, phaseL, phaseR, sampleRate float64) source.Source {
-	stepL := frequencyL / sampleRate
-	stepR := frequencyR / sampleRate
-	return func() []float32 {
-		out := source()
+func applyWaveS(waveFunc func(float64) float64, src source.Source, frequencyL, frequencyR, phaseL, phaseR, sampleRate float64) source.Source {
+	stepChangeL := frequencyL / sampleRate
+	stepChangeR := frequencyR / sampleRate
+	return source.Cached(func(step int) []float32 {
+		out := src(step)
 		out[0] = float32(waveFunc(2 * math.Pi * phaseL))
-		_, phaseL = math.Modf(phaseL + stepL)
+		_, phaseL = math.Modf(phaseL + stepChangeL)
 		out[1] = float32(waveFunc(2 * math.Pi * phaseR))
-		_, phaseR = math.Modf(phaseR + stepR)
+		_, phaseR = math.Modf(phaseR + stepChangeR)
 		return out
-	}
+	})
 }

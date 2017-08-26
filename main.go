@@ -6,7 +6,6 @@ import (
 
 	"github.com/gordonklaus/portaudio"
 
-	"github.com/kwoodhouse93/audio-playground/filter"
 	"github.com/kwoodhouse93/audio-playground/generator"
 	"github.com/kwoodhouse93/audio-playground/router"
 	"github.com/kwoodhouse93/audio-playground/sequence"
@@ -79,10 +78,10 @@ func main() {
 	sum := router.SumComp(nGate, mSeq)
 
 	// lpf := filter.LowPass(sum)
-	dly := filter.Delay(sum, 1000*time.Millisecond, sampleRate)
-	sumDly := router.Mixer2(dly, sum, 0.2, 0.6)
+	// dly := filter.Delay(sum, 1000*time.Millisecond, sampleRate)
+	// sumDly := router.Mixer2(dly, sum, 0.2, 0.6)
 
-	sink := sink.New(sumDly)
+	sink := sink.New(sum)
 
 	st, err := portaudio.OpenStream(p, sink)
 	panicOnErr(err)

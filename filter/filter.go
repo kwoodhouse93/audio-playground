@@ -9,8 +9,8 @@ import (
 
 // Zero sets a signal to 0
 func Zero(source source.Source) source.Source {
-	return func() []float32 {
-		out := source()
+	return func(step int) []float32 {
+		out := source(step)
 		out[0] = 0
 		out[1] = 0
 		return out
@@ -21,13 +21,13 @@ func Zero(source source.Source) source.Source {
 func Delay(source source.Source, delay time.Duration, sampleRate float64) source.Source {
 	delaySamples := utils.TimeToSteps(delay, sampleRate)
 	delayBuf := utils.MakeBuffer(2, delaySamples)
-	return func() []float32 {
+	return func(step int) []float32 {
 		out := utils.MakeSample(2)
 		// Pop from front and shift buffer
 		out[0], delayBuf[0] = delayBuf[0][0], delayBuf[0][1:]
 		out[1], delayBuf[1] = delayBuf[1][0], delayBuf[1][1:]
 		// Evaluate the sample on the input
-		s := source()
+		s := source(step)
 		// Push the input sample to the end of the buffer
 		delayBuf[0] = append(delayBuf[0], s[0])
 		delayBuf[1] = append(delayBuf[1], s[1])

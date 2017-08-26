@@ -16,9 +16,9 @@ func Pulse(control source.Source, duration time.Duration, threshold, sampleRate 
 		pulseSteps = utils.TimeToSteps(duration, sampleRate)
 		curStep    int
 	)
-	return func() []float32 {
+	return source.Cached(func(step int) []float32 {
 		out := utils.MakeSample(2)
-		ctl := control()
+		ctl := control(step)
 		if active {
 			out[0] = 1
 			out[1] = 1
@@ -35,16 +35,16 @@ func Pulse(control source.Source, duration time.Duration, threshold, sampleRate 
 		out[0] = 0
 		out[1] = 0
 		return out
-	}
+	})
 }
 
 // Gate allows the input signal to pass only when the control signal is above
 // a certain threshold
 func Gate(source, control source.Source, threshold float64) source.Source {
-	return func() []float32 {
+	return func(step int) []float32 {
 		out := utils.MakeSample(2)
-		ctl := control()
-		input := source()
+		ctl := control(step)
+		input := source(step)
 		if math.Abs(float64(ctl[0])) > threshold {
 			out[0] = input[0]
 			out[1] = input[1]
@@ -63,11 +63,11 @@ func Sequencer(sources []source.Source, period time.Duration, sampleRate float64
 		seqSteps = utils.TimeToSteps(period, sampleRate)
 		curStep  = seqSteps
 	)
-	return func() []float32 {
+	return source.Cached(func(step int) []float32 {
 		out := utils.MakeSample(2)
 		samples := make([][]float32, len(sources))
 		for ch, source := range sources {
-			samples[ch] = source()
+			samples[ch] = source(step)
 		}
 		curStep--
 		if curStep <= 0 {
@@ -77,5 +77,5 @@ func Sequencer(sources []source.Source, period time.Duration, sampleRate float64
 		out[0] = samples[channel][0]
 		out[1] = samples[channel][1]
 		return out
-	}
+	})
 }
