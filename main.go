@@ -28,7 +28,7 @@ func main() {
 	sampleRate = p.SampleRate
 	fmt.Printf("Sample rate: %f\n", sampleRate)
 
-	s := source.New(p.Output.Channels)
+	s := source.New()
 
 	noise := generator.UniformNoiseS(s)
 	// sine := generator.SineM(s, 440, 0, sampleRate)
@@ -81,9 +81,6 @@ func main() {
 	// lpf := filter.LowPass(sum)
 	dly := filter.Delay(sum, 1000*time.Millisecond, sampleRate)
 	sumDly := router.Mixer2(dly, sum, 0.2, 0.6)
-	// The delay seems to work, but the particular arrangement above seems to
-	// stream poorly. Possibly accessing certain sources twice in the same chain
-	// causes problems?
 
 	sink := sink.New(sumDly)
 

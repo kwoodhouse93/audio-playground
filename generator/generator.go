@@ -12,12 +12,10 @@ import (
 // UniformNoiseM returns a mono uniform noise generator
 func UniformNoiseM(source source.Source) source.Source {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return func(bufferSize int) (out [][]float32) {
-		out = source(bufferSize)
-		for i := range out[0] {
-			out[0][i] = (r.Float32() * 2) - 1
-			out[1][i] = out[0][i]
-		}
+	return func() []float32 {
+		out := source()
+		out[0] = (r.Float32() * 2) - 1
+		out[1] = out[0]
 		return out
 	}
 }
@@ -25,12 +23,10 @@ func UniformNoiseM(source source.Source) source.Source {
 // UniformNoiseS returns a stereo uniform noise generator
 func UniformNoiseS(source source.Source) source.Source {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return func(bufferSize int) (out [][]float32) {
-		out = source(bufferSize)
-		for i := range out[0] {
-			out[0][i] = (r.Float32() * 2) - 1
-			out[1][i] = (r.Float32() * 2) - 1
-		}
+	return func() []float32 {
+		out := source()
+		out[0] = (r.Float32() * 2) - 1
+		out[1] = (r.Float32() * 2) - 1
 		return out
 	}
 }
@@ -77,13 +73,11 @@ func SquareS(source source.Source, frequencyL, frequencyR, phaseL, phaseR, dutyC
 
 func applyWaveM(waveFunc func(float64) float64, source source.Source, frequency, phase, sampleRate float64) source.Source {
 	step := frequency / sampleRate
-	return func(bufferSize int) (out [][]float32) {
-		out = source(bufferSize)
-		for i := range out[0] {
-			out[0][i] = float32(waveFunc(2 * math.Pi * phase))
-			_, phase = math.Modf(phase + step)
-			out[1][i] = out[0][i]
-		}
+	return func() []float32 {
+		out := source()
+		out[0] = float32(waveFunc(2 * math.Pi * phase))
+		_, phase = math.Modf(phase + step)
+		out[1] = out[0]
 		return out
 	}
 }
@@ -91,14 +85,12 @@ func applyWaveM(waveFunc func(float64) float64, source source.Source, frequency,
 func applyWaveS(waveFunc func(float64) float64, source source.Source, frequencyL, frequencyR, phaseL, phaseR, sampleRate float64) source.Source {
 	stepL := frequencyL / sampleRate
 	stepR := frequencyR / sampleRate
-	return func(bufferSize int) (out [][]float32) {
-		out = source(bufferSize)
-		for i := range out[0] {
-			out[0][i] = float32(waveFunc(2 * math.Pi * phaseL))
-			_, phaseL = math.Modf(phaseL + stepL)
-			out[1][i] = float32(waveFunc(2 * math.Pi * phaseR))
-			_, phaseR = math.Modf(phaseR + stepR)
-		}
+	return func() []float32 {
+		out := source()
+		out[0] = float32(waveFunc(2 * math.Pi * phaseL))
+		_, phaseL = math.Modf(phaseL + stepL)
+		out[1] = float32(waveFunc(2 * math.Pi * phaseR))
+		_, phaseR = math.Modf(phaseR + stepR)
 		return out
 	}
 }

@@ -8,9 +8,10 @@ type Sink func(outputBuffer [][]float32)
 // New returns a Sink function object
 func New(source source.Source) Sink {
 	return func(out [][]float32) {
-		buf := source(len(out[0]))
-		for i := range out {
-			copy(out[i], buf[i])
+		for i := range out[0] {
+			sample := source()
+			out[0][i] = sample[0]
+			out[1][i] = sample[1]
 		}
 	}
 }

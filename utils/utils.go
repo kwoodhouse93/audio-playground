@@ -14,6 +14,11 @@ func MakeBuffer(channels, samples int) (out [][]float32) {
 	return out
 }
 
+// MakeSample returns an empty sample with the given number of channels
+func MakeSample(channels int) []float32 {
+	return make([]float32, channels)
+}
+
 // TimeToSteps converts a duration to a number of samples based on the sample rate
 func TimeToSteps(duration time.Duration, sampleRate float64) int {
 	return int(duration.Seconds() * sampleRate)
