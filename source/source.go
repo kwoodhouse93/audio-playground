@@ -21,7 +21,6 @@ func Cached(evalFunc func(int) []float32) Source {
 	return func(step int) []float32 {
 		if curStep == (step - 1) {
 			curSample = evalFunc(step)
-			// fmt.Printf("passed: %d, last eval: %d\n", step, curStep)
 			curStep = step
 		}
 		return curSample

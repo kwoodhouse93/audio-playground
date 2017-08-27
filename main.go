@@ -6,6 +6,7 @@ import (
 
 	"github.com/gordonklaus/portaudio"
 
+	"github.com/kwoodhouse93/audio-playground/filter"
 	"github.com/kwoodhouse93/audio-playground/generator"
 	"github.com/kwoodhouse93/audio-playground/router"
 	"github.com/kwoodhouse93/audio-playground/sequence"
@@ -55,6 +56,8 @@ func main() {
 	nLfSqr := generator.SquareM(s, 2, 0, 0.1, sampleRate)
 	nPulse := sequence.Pulse(nLfSqr, 50*time.Millisecond, 0.5, sampleRate)
 	nGate := sequence.Gate(noise, nPulse, 0.5)
+	nDly := filter.DelayFB(nGate, 100*time.Millisecond, 0.6, sampleRate)
+	nSum := router.Mixer2(nGate, nDly, 0.5, 0.5)
 
 	// Am chord
 	sineSAm := generator.SineS(s, 261.63, 440, 0, 0, sampleRate)
@@ -75,7 +78,7 @@ func main() {
 		mixE,
 	}, 2*time.Second, sampleRate)
 
-	sum := router.SumComp(nGate, mSeq)
+	sum := router.SumComp(nSum, mSeq)
 
 	// lpf := filter.LowPass(sum)
 	// dly := filter.Delay(sum, 1000*time.Millisecond, sampleRate)
