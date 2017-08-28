@@ -84,11 +84,9 @@ func main() {
 
 	sum := router.SumComp(nSum, mSeq)
 
-	// lpf := filter.LowPass(sum)
-	// dly := filter.Delay(sum, 1000*time.Millisecond, sampleRate)
-	// sumDly := router.Mixer2(dly, sum, 0.2, 0.6)
+	filt := filter.LowPass(sum, 800, 1, sampleRate)
 
-	sink := sink.New(sum)
+	sink := sink.New(filt)
 
 	st, err := portaudio.OpenStream(p, sink)
 	panicOnErr(err)
