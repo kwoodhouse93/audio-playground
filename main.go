@@ -8,6 +8,7 @@ import (
 
 	"github.com/kwoodhouse93/audio-playground/filter"
 	"github.com/kwoodhouse93/audio-playground/generator"
+	"github.com/kwoodhouse93/audio-playground/meter"
 	"github.com/kwoodhouse93/audio-playground/notes"
 	"github.com/kwoodhouse93/audio-playground/router"
 	"github.com/kwoodhouse93/audio-playground/sequence"
@@ -28,6 +29,8 @@ func main() {
 	p.Output.Channels = 2
 	sampleRate = p.SampleRate
 	fmt.Printf("Sample rate: %f\n", sampleRate)
+
+	meter := meter.NewCommonTime(120)
 
 	s := source.New()
 
@@ -54,7 +57,7 @@ func main() {
 	// })
 
 	// // Noise 4/4
-	nLfSqr := generator.SquareM(s, 2, 0, 0.1, sampleRate)
+	nLfSqr := generator.SquareM(s, meter.NoteToFreq(notes.Quarter), 0, 0.1, sampleRate)
 	nPulse := sequence.Pulse(nLfSqr, 50*time.Millisecond, 0.5, sampleRate)
 	nGate := sequence.Gate(noise, nPulse, 0.5)
 	nDly := filter.DelayFB(nGate, 100*time.Millisecond, 0.5, sampleRate)
@@ -77,7 +80,7 @@ func main() {
 	mSeq := sequence.Sequencer([]source.Source{
 		mixAm,
 		mixE,
-	}, 2*time.Second, sampleRate)
+	}, meter.NoteToTime(notes.Whole), sampleRate)
 
 	sum := router.SumComp(nSum, mSeq)
 
