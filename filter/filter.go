@@ -19,35 +19,35 @@ func Zero(source source.Source) source.Source {
 }
 
 // Delay stores the samples for a given duration then plays them back delayed
-func Delay(source source.Source, delay time.Duration, sampleRate float64) source.Source {
+func Delay(src source.Source, delay time.Duration, sampleRate float64) source.Source {
 	delaySamples := utils.TimeToSteps(delay, sampleRate)
 	delayBuf := utils.MakeBuffer(2, delaySamples)
-	return func(step int) []float32 {
+	return source.Cached(func(step int) []float32 {
 		out := utils.MakeSample(2)
 		// Pop from front and shift buffer
 		out[0], delayBuf[0] = delayBuf[0][0], delayBuf[0][1:]
 		out[1], delayBuf[1] = delayBuf[1][0], delayBuf[1][1:]
 		// Evaluate the sample on the input
-		s := source(step)
+		s := src(step)
 		// Push the input sample to the end of the buffer
 		delayBuf[0] = append(delayBuf[0], s[0])
 		delayBuf[1] = append(delayBuf[1], s[1])
 		// Return popped sample
 		return out
-	}
+	})
 }
 
 // DelayFB is a delay with a feedback setting.
-func DelayFB(source source.Source, delay time.Duration, feedback float32, sampleRate float64) source.Source {
+func DelayFB(src source.Source, delay time.Duration, feedback float32, sampleRate float64) source.Source {
 	delaySamples := utils.TimeToSteps(delay, sampleRate)
 	delayBuf := utils.MakeBuffer(2, delaySamples)
-	return func(step int) []float32 {
+	return source.Cached(func(step int) []float32 {
 		out := utils.MakeSample(2)
 		// Pop from front and shift buffer
 		out[0], delayBuf[0] = delayBuf[0][0], delayBuf[0][1:]
 		out[1], delayBuf[1] = delayBuf[1][0], delayBuf[1][1:]
 		// Evaluate the sample on the input and calculate the feedback
-		s := source(step)
+		s := src(step)
 		s[0] = s[0] + (out[0] * feedback)
 		s[1] = s[1] + (out[0] * feedback)
 		// Push the input sample to the end of the buffer
@@ -55,12 +55,12 @@ func DelayFB(source source.Source, delay time.Duration, feedback float32, sample
 		delayBuf[1] = append(delayBuf[1], s[1])
 		// Return popped sample
 		return out
-	}
+	})
 }
 
 // LowPass is a basic low pass filter
 // H(s) = 1 / (s^2 + s/Q + 1)
-func LowPass(source source.Source, cornerFreq, Q, sampleRate float64) source.Source {
+func LowPass(src source.Source, cornerFreq, Q, sampleRate float64) source.Source {
 	cosw0, _, alpha := calcCoefPrereqs(cornerFreq, Q, sampleRate)
 
 	b0 := (1 - cosw0) / 2
@@ -70,12 +70,12 @@ func LowPass(source source.Source, cornerFreq, Q, sampleRate float64) source.Sou
 	a1 := -2 * cosw0
 	a2 := 1 - alpha
 
-	return applyBiquadTransfer(source, b0, b1, b2, a0, a1, a2)
+	return source.Cached(applyBiquadTransfer(src, b0, b1, b2, a0, a1, a2))
 }
 
 // HighPass is a basic high pass filter
 // H(s) = s^2 / (s^2 + s/Q + 1)
-func HighPass(source source.Source, cornerFreq, Q, sampleRate float64) source.Source {
+func HighPass(src source.Source, cornerFreq, Q, sampleRate float64) source.Source {
 	cosw0, _, alpha := calcCoefPrereqs(cornerFreq, Q, sampleRate)
 
 	b0 := (1 + cosw0) / 2
@@ -85,12 +85,12 @@ func HighPass(source source.Source, cornerFreq, Q, sampleRate float64) source.So
 	a1 := -2 * cosw0
 	a2 := 1 - alpha
 
-	return applyBiquadTransfer(source, b0, b1, b2, a0, a1, a2)
+	return source.Cached(applyBiquadTransfer(src, b0, b1, b2, a0, a1, a2))
 }
 
 // BandPassPeakQ is a basic bandpass filter with constant skirt gain, and peak gain = Q
 // H(s) = s / (s^2 + s/Q + 1)
-func BandPassPeakQ(source source.Source, shelfFreq, Q, sampleRate float64) source.Source {
+func BandPassPeakQ(src source.Source, shelfFreq, Q, sampleRate float64) source.Source {
 	cosw0, sinw0, alpha := calcCoefPrereqs(shelfFreq, Q, sampleRate)
 
 	b0 := sinw0 / 2
@@ -100,12 +100,12 @@ func BandPassPeakQ(source source.Source, shelfFreq, Q, sampleRate float64) sourc
 	a1 := -2 * cosw0
 	a2 := 1 - alpha
 
-	return applyBiquadTransfer(source, b0, b1, b2, a0, a1, a2)
+	return source.Cached(applyBiquadTransfer(src, b0, b1, b2, a0, a1, a2))
 }
 
 // BandPassPeak0 is a basic bandpass filter, iwth a constant 0 dB peak gain
 // H(s) = (s/Q) / (s^2 + s/Q + 1)
-func BandPassPeak0(source source.Source, shelfFreq, Q, sampleRate float64) source.Source {
+func BandPassPeak0(src source.Source, shelfFreq, Q, sampleRate float64) source.Source {
 	cosw0, _, alpha := calcCoefPrereqs(shelfFreq, Q, sampleRate)
 
 	b0 := alpha
@@ -115,12 +115,12 @@ func BandPassPeak0(source source.Source, shelfFreq, Q, sampleRate float64) sourc
 	a1 := -2 * cosw0
 	a2 := 1 - alpha
 
-	return applyBiquadTransfer(source, b0, b1, b2, a0, a1, a2)
+	return source.Cached(applyBiquadTransfer(src, b0, b1, b2, a0, a1, a2))
 }
 
 // Notch is a basic notch filter
 // H(s) = (s^2 + 1) / (s^2 + s/Q + 1)
-func Notch(source source.Source, notchFreq, Q, sampleRate float64) source.Source {
+func Notch(src source.Source, notchFreq, Q, sampleRate float64) source.Source {
 	cosw0, _, alpha := calcCoefPrereqs(notchFreq, Q, sampleRate)
 
 	b0 := float32(1.0)
@@ -130,13 +130,13 @@ func Notch(source source.Source, notchFreq, Q, sampleRate float64) source.Source
 	a1 := -2 * cosw0
 	a2 := 1 - alpha
 
-	return applyBiquadTransfer(source, b0, b1, b2, a0, a1, a2)
+	return source.Cached(applyBiquadTransfer(src, b0, b1, b2, a0, a1, a2))
 }
 
 // AllPass is a basic all pass filter
 // H(s) = (s^2 - s/Q + 1) / (s^2 + s/Q + 1)
 // quadFreq is the frequency at which the input and output go into quadrature
-func AllPass(source source.Source, quadFreq, Q, sampleRate float64) source.Source {
+func AllPass(src source.Source, quadFreq, Q, sampleRate float64) source.Source {
 	cosw0, _, alpha := calcCoefPrereqs(quadFreq, Q, sampleRate)
 
 	b0 := 1 - alpha
@@ -146,7 +146,7 @@ func AllPass(source source.Source, quadFreq, Q, sampleRate float64) source.Sourc
 	a1 := -2 * cosw0
 	a2 := 1 - alpha
 
-	return applyBiquadTransfer(source, b0, b1, b2, a0, a1, a2)
+	return source.Cached(applyBiquadTransfer(src, b0, b1, b2, a0, a1, a2))
 }
 
 func calcCoefPrereqs(cornerFreq, Q, sampleRate float64) (cosw0, sinw0, alpha float32) {

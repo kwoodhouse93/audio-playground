@@ -56,12 +56,13 @@ func main() {
 	// 	{Source: sqrS, Gain: 0.0},
 	// })
 
-	// // Noise 4/4
+	// Noise Shimmer
 	nLfSqr := generator.SquareM(s, meter.NoteToFreq(notes.Quarter), 0, 0.1, sampleRate)
 	nPulse := sequence.Pulse(nLfSqr, 50*time.Millisecond, 0.5, sampleRate)
 	nGate := sequence.Gate(noise, nPulse, 0.5)
-	nDly := filter.DelayFB(nGate, 100*time.Millisecond, 0.5, sampleRate)
+	nDly := filter.DelayFB(nGate, meter.NoteToTime(notes.Sixteenth), 0.5, sampleRate)
 	nSum := router.Mixer2(nGate, nDly, 0.5, 0.5)
+	nFilt := filter.HighPass(nSum, 8000, 1, sampleRate)
 
 	// Am chord
 	sineSAm := generator.SineS(s, notes.C4, notes.A4, 0, 0, sampleRate)
@@ -81,12 +82,11 @@ func main() {
 		mixAm,
 		mixE,
 	}, meter.NoteToTime(notes.Whole), sampleRate)
+	seqFilt := filter.LowPass(mSeq, 400, 1, sampleRate)
 
-	sum := router.SumComp(nSum, mSeq)
+	sum := router.SumComp(nFilt, seqFilt)
 
-	filt := filter.LowPass(sum, 800, 1, sampleRate)
-
-	sink := sink.New(filt)
+	sink := sink.New(sum)
 
 	st, err := portaudio.OpenStream(p, sink)
 	panicOnErr(err)
