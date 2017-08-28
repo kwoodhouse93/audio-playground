@@ -13,6 +13,8 @@ Note you will need appropriate PortAudio libraries. Check out the [Go PortAudio 
 
 ### And some stuff that doesn't belong in this README
 
+For audio EQ filters: http://www.musicdsp.org/files/Audio-EQ-Cookbook.txt
+
 For reference, copied from https://github.com/avelino/awesome-go:
 
 *Libraries for manipulating audio.*
