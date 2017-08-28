@@ -8,6 +8,7 @@ import (
 
 	"github.com/kwoodhouse93/audio-playground/filter"
 	"github.com/kwoodhouse93/audio-playground/generator"
+	"github.com/kwoodhouse93/audio-playground/notes"
 	"github.com/kwoodhouse93/audio-playground/router"
 	"github.com/kwoodhouse93/audio-playground/sequence"
 	"github.com/kwoodhouse93/audio-playground/sink"
@@ -56,17 +57,17 @@ func main() {
 	nLfSqr := generator.SquareM(s, 2, 0, 0.1, sampleRate)
 	nPulse := sequence.Pulse(nLfSqr, 50*time.Millisecond, 0.5, sampleRate)
 	nGate := sequence.Gate(noise, nPulse, 0.5)
-	nDly := filter.DelayFB(nGate, 100*time.Millisecond, 0.6, sampleRate)
+	nDly := filter.DelayFB(nGate, 100*time.Millisecond, 0.5, sampleRate)
 	nSum := router.Mixer2(nGate, nDly, 0.5, 0.5)
 
 	// Am chord
-	sineSAm := generator.SineS(s, 261.63, 440, 0, 0, sampleRate)
-	triSAm := generator.TriangleS(s, 523.25, 659.25, 0, 0, sampleRate)
+	sineSAm := generator.SineS(s, notes.C4, notes.A4, 0, 0, sampleRate)
+	triSAm := generator.TriangleS(s, notes.C5, notes.E5, 0, 0, sampleRate)
 	mixAm := router.Mixer2(sineSAm, triSAm, 0.6, 0.4)
 
 	// E chord
-	sineSE := generator.SineS(s, 493.88, 329.63, 0, 0, sampleRate)
-	triSE := generator.TriangleS(s, 415.30, 164.81, 0, 0, sampleRate)
+	sineSE := generator.SineS(s, notes.B4, notes.E4, 0, 0, sampleRate)
+	triSE := generator.TriangleS(s, notes.Gsharp4, notes.E3, 0, 0, sampleRate)
 	mixE := router.Mixer2(sineSE, triSE, 0.6, 0.4)
 
 	// mLfSqr := generator.SquareM(s, 0.5, 0, 0.1, sampleRate)
