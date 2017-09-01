@@ -15,6 +15,15 @@ Note you will need appropriate PortAudio libraries. Check out the [Go PortAudio 
 
 For audio EQ filters: http://www.musicdsp.org/files/Audio-EQ-Cookbook.txt
 
+Some other examples of audio synthesis in Go:
+* https://github.com/nf/sigourney
+* https://github.com/brettbuddin/eolian
+* https://github.com/loov/synth
+* https://github.com/Shinpeim/go_synth
+
+A Go sound library:
+* https://github.com/padster/go-sound
+
 For reference, copied from https://github.com/avelino/awesome-go:
 
 *Libraries for manipulating audio.*
