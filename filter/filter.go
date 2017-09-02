@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/kwoodhouse93/audio-playground/source"
+	"github.com/kwoodhouse93/audio-playground/types"
 	"github.com/kwoodhouse93/audio-playground/utils"
 )
 
@@ -21,18 +22,14 @@ func Zero(source source.Source) source.Source {
 // Delay stores the samples for a given duration then plays them back delayed
 func Delay(src source.Source, delay time.Duration, sampleRate float64) source.Source {
 	delaySamples := utils.TimeToSteps(delay, sampleRate)
-	delayBuf := utils.MakeBuffer(2, delaySamples)
+	delayBuf := make([]*types.DelayLine, 2)
+	delayBuf[0] = types.NewDelayLine(delaySamples)
+	delayBuf[1] = types.NewDelayLine(delaySamples)
 	return source.Cached(func(step int) []float32 {
 		out := utils.MakeSample(2)
-		// Pop from front and shift buffer
-		out[0], delayBuf[0] = delayBuf[0][0], delayBuf[0][1:]
-		out[1], delayBuf[1] = delayBuf[1][0], delayBuf[1][1:]
-		// Evaluate the sample on the input
 		s := src(step)
-		// Push the input sample to the end of the buffer
-		delayBuf[0] = append(delayBuf[0], s[0])
-		delayBuf[1] = append(delayBuf[1], s[1])
-		// Return popped sample
+		out[0] = delayBuf[0].Step(s[0])
+		out[1] = delayBuf[1].Step(s[1])
 		return out
 	})
 }
@@ -40,20 +37,16 @@ func Delay(src source.Source, delay time.Duration, sampleRate float64) source.So
 // DelayFB is a delay with a feedback setting.
 func DelayFB(src source.Source, delay time.Duration, feedback float32, sampleRate float64) source.Source {
 	delaySamples := utils.TimeToSteps(delay, sampleRate)
-	delayBuf := utils.MakeBuffer(2, delaySamples)
+	delayBuf := make([]*types.DelayLine, 2)
+	delayBuf[0] = types.NewDelayLine(delaySamples)
+	delayBuf[1] = types.NewDelayLine(delaySamples)
 	return source.Cached(func(step int) []float32 {
 		out := utils.MakeSample(2)
-		// Pop from front and shift buffer
-		out[0], delayBuf[0] = delayBuf[0][0], delayBuf[0][1:]
-		out[1], delayBuf[1] = delayBuf[1][0], delayBuf[1][1:]
-		// Evaluate the sample on the input and calculate the feedback
 		s := src(step)
-		s[0] = s[0] + (out[0] * feedback)
-		s[1] = s[1] + (out[0] * feedback)
-		// Push the input sample to the end of the buffer
-		delayBuf[0] = append(delayBuf[0], s[0])
-		delayBuf[1] = append(delayBuf[1], s[1])
-		// Return popped sample
+		out[0] = delayBuf[0].Read()
+		out[1] = delayBuf[1].Read()
+		delayBuf[0].Write(s[0] + (out[0] * feedback))
+		delayBuf[1].Write(s[1] + (out[1] * feedback))
 		return out
 	})
 }
