@@ -32,9 +32,7 @@ func main() {
 
 	meter := meter.NewCommonTime(120)
 
-	s := source.New()
-
-	noise := generator.UniformNoiseS(s)
+	noise := generator.UniformNoiseS()
 	// sine := generator.SineM(s, 440, 0, sampleRate)
 	// sineS := generator.SineS(s, 261.63, 440, 0, 0, sampleRate)
 	// tri := generator.TriangleM(s, 440, 0, sampleRate)
@@ -57,7 +55,7 @@ func main() {
 	// })
 
 	// Noise Shimmer
-	nLfSqr := generator.SquareM(s, meter.NoteToFreq(notes.Quarter), 0, 0.1, sampleRate)
+	nLfSqr := generator.SquareM(meter.NoteToFreq(notes.Quarter), 0, 0.1, sampleRate)
 	nPulse := sequence.Pulse(nLfSqr, 50*time.Millisecond, 0.5, sampleRate)
 	nGate := sequence.Gate(noise, nPulse, 0.5)
 	nDly := filter.DelayFB(nGate, meter.NoteToTime(notes.Sixteenth), 0.5, sampleRate)
@@ -65,13 +63,13 @@ func main() {
 	nFilt := filter.HighPass(nSum, 8000, 1, sampleRate)
 
 	// Am chord
-	sineSAm := generator.SineS(s, notes.C4, notes.A4, 0, 0, sampleRate)
-	triSAm := generator.TriangleS(s, notes.C5, notes.E5, 0, 0, sampleRate)
+	sineSAm := generator.SineS(notes.C4, notes.A4, 0, 0, sampleRate)
+	triSAm := generator.TriangleS(notes.C5, notes.E5, 0, 0, sampleRate)
 	mixAm := router.Mixer2(sineSAm, triSAm, 0.6, 0.4)
 
 	// E chord
-	sineSE := generator.SineS(s, notes.B4, notes.E4, 0, 0, sampleRate)
-	triSE := generator.TriangleS(s, notes.Gsharp4, notes.E3, 0, 0, sampleRate)
+	sineSE := generator.SineS(notes.B4, notes.E4, 0, 0, sampleRate)
+	triSE := generator.TriangleS(notes.Gsharp4, notes.E3, 0, 0, sampleRate)
 	mixE := router.Mixer2(sineSE, triSE, 0.6, 0.4)
 
 	// mLfSqr := generator.SquareM(s, 0.5, 0, 0.1, sampleRate)

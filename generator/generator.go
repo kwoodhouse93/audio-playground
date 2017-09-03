@@ -6,15 +6,15 @@ import (
 	"time"
 
 	"github.com/kwoodhouse93/audio-playground/source"
+	"github.com/kwoodhouse93/audio-playground/types"
 	"github.com/kwoodhouse93/audio-playground/utils"
 )
 
 // UniformNoiseM returns a mono uniform noise generator
-func UniformNoiseM(src source.Source) source.Source {
+func UniformNoiseM() source.Source {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-
 	return source.Cached(func(step int) []float32 {
-		out := src(step)
+		out := types.NewSample(2)
 		out[0] = (r.Float32() * 2) - 1
 		out[1] = out[0]
 		return out
@@ -22,10 +22,10 @@ func UniformNoiseM(src source.Source) source.Source {
 }
 
 // UniformNoiseS returns a stereo uniform noise generator
-func UniformNoiseS(src source.Source) source.Source {
+func UniformNoiseS() source.Source {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return source.Cached(func(step int) []float32 {
-		out := src(step)
+		out := types.NewSample(2)
 		out[0] = (r.Float32() * 2) - 1
 		out[1] = (r.Float32() * 2) - 1
 		return out
@@ -33,49 +33,49 @@ func UniformNoiseS(src source.Source) source.Source {
 }
 
 // SineM returns a mono sine wave generator
-func SineM(source source.Source, frequency, phase, sampleRate float64) source.Source {
-	return applyWaveM(math.Sin, source, frequency, phase, sampleRate)
+func SineM(frequency, phase, sampleRate float64) source.Source {
+	return applyWaveM(math.Sin, frequency, phase, sampleRate)
 }
 
 // SineS returns a stereo sine wave generator
-func SineS(source source.Source, frequencyL, frequencyR, phaseL, phaseR, sampleRate float64) source.Source {
-	return applyWaveS(math.Sin, source, frequencyL, frequencyR, phaseL, phaseR, sampleRate)
+func SineS(frequencyL, frequencyR, phaseL, phaseR, sampleRate float64) source.Source {
+	return applyWaveS(math.Sin, frequencyL, frequencyR, phaseL, phaseR, sampleRate)
 }
 
 // TriangleM returns a mono triangle wave generator
-func TriangleM(source source.Source, frequency, phase, sampleRate float64) source.Source {
-	return applyWaveM(utils.Triangle, source, frequency, phase, sampleRate)
+func TriangleM(frequency, phase, sampleRate float64) source.Source {
+	return applyWaveM(utils.Triangle, frequency, phase, sampleRate)
 }
 
 // TriangleS returns a stereo triangle wave generator
-func TriangleS(source source.Source, frequencyL, frequencyR, phaseL, phaseR, sampleRate float64) source.Source {
-	return applyWaveS(utils.Triangle, source, frequencyL, frequencyR, phaseL, phaseR, sampleRate)
+func TriangleS(frequencyL, frequencyR, phaseL, phaseR, sampleRate float64) source.Source {
+	return applyWaveS(utils.Triangle, frequencyL, frequencyR, phaseL, phaseR, sampleRate)
 }
 
 // SawtoothM returns a mono sawtooth wave generator
-func SawtoothM(source source.Source, frequency, phase, sampleRate float64) source.Source {
-	return applyWaveM(utils.Sawtooth, source, frequency, phase, sampleRate)
+func SawtoothM(frequency, phase, sampleRate float64) source.Source {
+	return applyWaveM(utils.Sawtooth, frequency, phase, sampleRate)
 }
 
 // SawtoothS returns a stereo sawtooth wave generator
-func SawtoothS(source source.Source, frequencyL, frequencyR, phaseL, phaseR, sampleRate float64) source.Source {
-	return applyWaveS(utils.Sawtooth, source, frequencyL, frequencyR, phaseL, phaseR, sampleRate)
+func SawtoothS(frequencyL, frequencyR, phaseL, phaseR, sampleRate float64) source.Source {
+	return applyWaveS(utils.Sawtooth, frequencyL, frequencyR, phaseL, phaseR, sampleRate)
 }
 
 // SquareM returns a mono square wave generator
-func SquareM(source source.Source, frequency, phase, dutyCycle, sampleRate float64) source.Source {
-	return applyWaveM(utils.SquareFunc(dutyCycle), source, frequency, phase, sampleRate)
+func SquareM(frequency, phase, dutyCycle, sampleRate float64) source.Source {
+	return applyWaveM(utils.SquareFunc(dutyCycle), frequency, phase, sampleRate)
 }
 
 // SquareS returns a stereo square wave generator
-func SquareS(source source.Source, frequencyL, frequencyR, phaseL, phaseR, dutyCycle, sampleRate float64) source.Source {
-	return applyWaveS(utils.SquareFunc(dutyCycle), source, frequencyL, frequencyR, phaseL, phaseR, sampleRate)
+func SquareS(frequencyL, frequencyR, phaseL, phaseR, dutyCycle, sampleRate float64) source.Source {
+	return applyWaveS(utils.SquareFunc(dutyCycle), frequencyL, frequencyR, phaseL, phaseR, sampleRate)
 }
 
-func applyWaveM(waveFunc func(float64) float64, src source.Source, frequency, phase, sampleRate float64) source.Source {
+func applyWaveM(waveFunc func(float64) float64, frequency, phase, sampleRate float64) source.Source {
 	stepChange := frequency / sampleRate
 	return source.Cached(func(step int) []float32 {
-		out := src(step)
+		out := types.NewSample(2)
 		out[0] = float32(waveFunc(2 * math.Pi * phase))
 		_, phase = math.Modf(phase + stepChange)
 		out[1] = out[0]
@@ -83,11 +83,11 @@ func applyWaveM(waveFunc func(float64) float64, src source.Source, frequency, ph
 	})
 }
 
-func applyWaveS(waveFunc func(float64) float64, src source.Source, frequencyL, frequencyR, phaseL, phaseR, sampleRate float64) source.Source {
+func applyWaveS(waveFunc func(float64) float64, frequencyL, frequencyR, phaseL, phaseR, sampleRate float64) source.Source {
 	stepChangeL := frequencyL / sampleRate
 	stepChangeR := frequencyR / sampleRate
 	return source.Cached(func(step int) []float32 {
-		out := src(step)
+		out := types.NewSample(2)
 		out[0] = float32(waveFunc(2 * math.Pi * phaseL))
 		_, phaseL = math.Modf(phaseL + stepChangeL)
 		out[1] = float32(waveFunc(2 * math.Pi * phaseR))
