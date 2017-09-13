@@ -9,16 +9,6 @@ import (
 	"github.com/kwoodhouse93/audio-playground/utils"
 )
 
-// Zero sets a signal to 0
-func Zero(source source.Source) source.Source {
-	return func(step int) []float32 {
-		out := source(step)
-		out[0] = 0
-		out[1] = 0
-		return out
-	}
-}
-
 // Delay stores the samples for a given duration then plays them back delayed
 func Delay(src source.Source, delay time.Duration, sampleRate float64) source.Source {
 	delaySamples := utils.TimeToSteps(delay, sampleRate)
@@ -142,29 +132,35 @@ func AllPass(src source.Source, quadFreq, Q, sampleRate float64) source.Source {
 	return source.Cached(applyBiquadTransfer(src, b0, b1, b2, a0, a1, a2))
 }
 
-func calcCoefPrereqs(cornerFreq, Q, sampleRate float64) (cosw0, sinw0, alpha float32) {
-	w0 := 2 * math.Pi * (cornerFreq / sampleRate)
+func calcCoefPrereqs(f0, Q, sampleRate float64) (cosw0, sinw0, alpha float32) {
+	w0 := 2 * math.Pi * (f0 / sampleRate)
 	cosw0 = float32(math.Cos(w0))
 	sinw0 = float32(math.Sin(w0))
 	alpha = sinw0 / (2 * float32(Q))
 	return
 }
 
-func applyBiquadTransfer(source source.Source, b0, b1, b2, a0, a1, a2 float32) source.Source {
+func applyBiquadTransfer(src source.Source, b0, b1, b2, a0, a1, a2 float32) source.Source {
 	x := utils.MakeBuffer(2, 3)
 	y := utils.MakeBuffer(2, 3)
 	return func(step int) []float32 {
 		out := utils.MakeSample(2)
-		input := source(step)
+		input := src(step)
+		// TODO: Can this be achieved with delay lines, or another reusable type?
+		// Current approach feels a bit inelegant.
 		for i := range y {
+			// We're saying:
+			// Shift y along by 1 (increasing indexes i.e. 0->1->2, drop 2 and input to 0)
+			// Shift x along by 1
+			// Put an input into x[0]
+			// biquadTransfer puts a value into y[i][0]
 			y[i][2] = y[i][1]
 			y[i][1] = y[i][0]
 			x[i][2] = x[i][1]
 			x[i][1] = x[i][0]
 			x[i][0] = input[i]
+			out[i] = biquadTransfer(x[i], y[i], a0, a1, a2, b0, b1, b2)
 		}
-		out[0] = biquadTransfer(x[0], y[0], a0, a1, a2, b0, b1, b2)
-		out[1] = biquadTransfer(x[1], y[1], a0, a1, a2, b0, b1, b2)
 		return out
 	}
 }
@@ -172,4 +168,45 @@ func applyBiquadTransfer(source source.Source, b0, b1, b2, a0, a1, a2 float32) s
 func biquadTransfer(x, y []float32, a0, a1, a2, b0, b1, b2 float32) float32 {
 	y[0] = (b0/a0)*x[0] + (b1/a0)*x[1] + (b2/a0)*x[2] - (a1/a0)*y[1] - (a2/a0)*y[2]
 	return y[0]
+}
+
+// FeedBackComb is a simple feedback comb filter, as defined at
+// https://ccrma.stanford.edu/~jos/pasp/Feedback_Comb_Filters.html
+func FeedBackComb(src source.Source, inGain, backGain float32, delayLen int) source.Source {
+	delayBuf := make([]*types.DelayLine, 2)
+	delayBuf[0] = types.NewDelayLine(delayLen)
+	delayBuf[1] = types.NewDelayLine(delayLen)
+	return source.Cached(func(step int) []float32 {
+		input := src(step)
+		delayOut := utils.MakeSample(2)
+		delayOut[0] = delayBuf[0].Read()
+		delayOut[1] = delayBuf[1].Read()
+		delayIn := utils.MakeSample(2)
+		delayIn[0] = input[0] + (delayOut[0] * -1 * backGain)
+		delayIn[1] = input[1] + (delayOut[1] * -1 * backGain)
+		delayBuf[0].Write(delayIn[0])
+		delayBuf[1].Write(delayIn[1])
+		out := utils.MakeSample(2)
+		out[0] = delayIn[0] * inGain
+		out[1] = delayIn[1] * inGain
+		return out
+	})
+}
+
+// FeedForwardComb is a simple feedforward comb filter, as defined at
+// https://ccrma.stanford.edu/~jos/pasp/Feedforward_Comb_Filters.html
+func FeedForwardComb(src source.Source, inGain, outGain float32, delayLen int) source.Source {
+	delayBuf := make([]*types.DelayLine, 2)
+	delayBuf[0] = types.NewDelayLine(delayLen)
+	delayBuf[1] = types.NewDelayLine(delayLen)
+	return source.Cached(func(step int) []float32 {
+		input := src(step)
+		delayOut := utils.MakeSample(2)
+		delayOut[0] = delayBuf[0].Step(input[0])
+		delayOut[1] = delayBuf[1].Step(input[1])
+		out := utils.MakeSample(2)
+		out[0] = (input[0] * inGain) + (delayOut[0] * outGain)
+		out[1] = (input[1] * inGain) + (delayOut[1] * outGain)
+		return out
+	})
 }
