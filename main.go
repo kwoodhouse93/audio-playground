@@ -14,6 +14,7 @@ import (
 	"github.com/kwoodhouse93/audio-playground/sequence"
 	"github.com/kwoodhouse93/audio-playground/sink"
 	"github.com/kwoodhouse93/audio-playground/source"
+	"github.com/kwoodhouse93/audio-playground/utils"
 )
 
 var sampleRate float64
@@ -84,7 +85,9 @@ func main() {
 
 	sum := router.SumComp(nFilt, seqFilt)
 
-	sink := sink.New(sum)
+	comb := filter.FeedForwardComb(sum, 0.6, 0.8, utils.TimeToSteps(1*time.Millisecond, sampleRate))
+
+	sink := sink.New(comb)
 
 	st, err := portaudio.OpenStream(p, sink)
 	panicOnErr(err)

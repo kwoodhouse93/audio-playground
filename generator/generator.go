@@ -13,7 +13,7 @@ import (
 // UniformNoiseM returns a mono uniform noise generator
 func UniformNoiseM() source.Source {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return source.Cached(func(step int) []float32 {
+	return source.Cached(func(step int) types.Sample {
 		out := types.NewSample(2)
 		out[0] = (r.Float32() * 2) - 1
 		out[1] = out[0]
@@ -24,7 +24,7 @@ func UniformNoiseM() source.Source {
 // UniformNoiseS returns a stereo uniform noise generator
 func UniformNoiseS() source.Source {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return source.Cached(func(step int) []float32 {
+	return source.Cached(func(step int) types.Sample {
 		out := types.NewSample(2)
 		out[0] = (r.Float32() * 2) - 1
 		out[1] = (r.Float32() * 2) - 1
@@ -74,7 +74,7 @@ func SquareS(frequencyL, frequencyR, phaseL, phaseR, dutyCycle, sampleRate float
 
 func applyWaveM(waveFunc func(float64) float64, frequency, phase, sampleRate float64) source.Source {
 	stepChange := frequency / sampleRate
-	return source.Cached(func(step int) []float32 {
+	return source.Cached(func(step int) types.Sample {
 		out := types.NewSample(2)
 		out[0] = float32(waveFunc(2 * math.Pi * phase))
 		_, phase = math.Modf(phase + stepChange)
@@ -86,7 +86,7 @@ func applyWaveM(waveFunc func(float64) float64, frequency, phase, sampleRate flo
 func applyWaveS(waveFunc func(float64) float64, frequencyL, frequencyR, phaseL, phaseR, sampleRate float64) source.Source {
 	stepChangeL := frequencyL / sampleRate
 	stepChangeR := frequencyR / sampleRate
-	return source.Cached(func(step int) []float32 {
+	return source.Cached(func(step int) types.Sample {
 		out := types.NewSample(2)
 		out[0] = float32(waveFunc(2 * math.Pi * phaseL))
 		_, phaseL = math.Modf(phaseL + stepChangeL)
